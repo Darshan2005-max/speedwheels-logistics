@@ -12,7 +12,7 @@ export const getEstimate = async (modelId, pickup, drop) => {
   }
 };
 
-export const createBooking = async (bookingData) => {
+export const saveBooking = async (bookingData) => {
   try {
     const response = await axios.post(`${API_URL}/booking`, bookingData);
     return response.data;

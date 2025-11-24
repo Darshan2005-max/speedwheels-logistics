@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@paypal/react-paypal-js": "^8.9.2",
+    "@tailwindcss/postcss": "^4.1.17",
     "axios": "^1.13.2",
     "firebase": "^12.6.0",
     "react": "^19.2.0",

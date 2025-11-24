@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { getEstimate } from '../services/api';
+import { getEstimate, saveBooking } from '../services/api';
+import PaymentButton from './PaymentButton';
 
 const VEHICLES = [
   { id: 'mini', name: 'Mini Truck (2.5T)', icon: '🚚' },
@@ -40,6 +41,30 @@ const BookingForm = () => {
       setError("Failed to get estimate. Please check the addresses and try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = async (details) => {
+    try {
+      const bookingData = {
+        pickup: formData.pickup,
+        drop: formData.drop,
+        vehicle: formData.vehicle,
+        distanceKm: estimate.distanceKm,
+        total: estimate.total,
+        advance: estimate.advance,
+        paymentId: details.id,
+        paymentStatus: 'completed',
+        customerName: details.payer.name.given_name,
+      };
+
+      await saveBooking(bookingData);
+      alert('Booking Confirmed! Payment ID: ' + details.id);
+      setEstimate(null);
+      setFormData({ pickup: '', drop: '', vehicle: 'mini' });
+    } catch (err) {
+      console.error(err);
+      alert('Payment successful but failed to save booking. Please contact support.');
     }
   };
 
@@ -133,9 +158,9 @@ const BookingForm = () => {
               </div>
             </div>
             
-            <button className="w-full mt-6 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">
-              Pay ₹{estimate.advance} to Confirm
-            </button>
+            <div className="mt-6">
+               <PaymentButton amount={estimate.advance} onSuccess={handlePaymentSuccess} />
+            </div>
           </div>
         )}
       </div>
