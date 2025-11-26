@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getEstimate, saveBooking } from '../services/api';
 import PaymentButton from './PaymentButton';
+import MapDisplay from './MapDisplay';
 
 const VEHICLES = [
   { id: 'mini', name: 'Mini Truck (2.5T)', icon: '🚚' },
@@ -81,7 +82,7 @@ const BookingForm = () => {
             value={formData.pickup}
             onChange={handleChange}
             className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter pickup location"
+            placeholder="Enter pickup location (e.g., Mumbai, India)"
           />
         </div>
 
@@ -93,7 +94,7 @@ const BookingForm = () => {
             value={formData.drop}
             onChange={handleChange}
             className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter drop location"
+            placeholder="Enter drop location (e.g., Delhi, India)"
           />
         </div>
 
@@ -157,6 +158,17 @@ const BookingForm = () => {
                 <span>₹{estimate.advance}</span>
               </div>
             </div>
+            
+            {/* Map Display with Route */}
+            {estimate.pickupCoords && estimate.dropCoords && (
+              <MapDisplay
+                pickupCoords={estimate.pickupCoords}
+                dropCoords={estimate.dropCoords}
+                routePolyline={estimate.routePolyline}
+                distance={estimate.distanceKm}
+                duration={estimate.duration}
+              />
+            )}
             
             <div className="mt-6">
                <PaymentButton amount={estimate.advance} onSuccess={handlePaymentSuccess} />
