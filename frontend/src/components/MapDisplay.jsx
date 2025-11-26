@@ -1,95 +1,104 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { loadGoogleMapsAPI } from '../utils/googleMapsLoader';
 
 const MapDisplay = ({ pickupCoords, dropCoords, routePolyline, distance, duration }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const [mapError, setMapError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if Google Maps is loaded
-    if (!window.google || !window.google.maps) {
-      setMapError(true);
-      console.error('Google Maps JavaScript API not loaded');
-      return;
-    }
+    const initMap = async () => {
+      try {
+        // Load Google Maps API dynamically
+        await loadGoogleMapsAPI();
+        setIsLoading(false);
 
-    // Initialize map
-    const map = new window.google.maps.Map(mapRef.current, {
-      zoom: 8,
-      center: pickupCoords,
-      mapTypeControl: true,
-      streetViewControl: false,
-      fullscreenControl: true,
-    });
+        // Initialize map
+        const map = new window.google.maps.Map(mapRef.current, {
+          zoom: 8,
+          center: pickupCoords,
+          mapTypeControl: true,
+          streetViewControl: false,
+          fullscreenControl: true,
+        });
 
-    mapInstanceRef.current = map;
+        mapInstanceRef.current = map;
 
-    // Add pickup marker (green)
-    const pickupMarker = new window.google.maps.Marker({
-      position: pickupCoords,
-      map: map,
-      title: 'Pickup Location',
-      icon: {
-        url: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
-      },
-      animation: window.google.maps.Animation.DROP,
-    });
+        // Add pickup marker (green)
+        new window.google.maps.Marker({
+          position: pickupCoords,
+          map: map,
+          title: 'Pickup Location',
+          icon: {
+            url: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+          },
+          animation: window.google.maps.Animation.DROP,
+        });
 
-    // Add drop marker (red)
-    const dropMarker = new window.google.maps.Marker({
-      position: dropCoords,
-      map: map,
-      title: 'Drop Location',
-      icon: {
-        url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
-      },
-      animation: window.google.maps.Animation.DROP,
-    });
+        // Add drop marker (red)
+        new window.google.maps.Marker({
+          position: dropCoords,
+          map: map,
+          title: 'Drop Location',
+          icon: {
+            url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+          },
+          animation: window.google.maps.Animation.DROP,
+        });
 
-    // Draw route if polyline is available
-    if (routePolyline) {
-      const decodedPath = window.google.maps.geometry.encoding.decodePath(routePolyline);
-      const routePath = new window.google.maps.Polyline({
-        path: decodedPath,
-        geodesic: true,
-        strokeColor: '#2563eb',
-        strokeOpacity: 0.8,
-        strokeWeight: 4,
-      });
-      routePath.setMap(map);
+        // Draw route if polyline is available
+        if (routePolyline) {
+          const decodedPath = window.google.maps.geometry.encoding.decodePath(routePolyline);
+          const routePath = new window.google.maps.Polyline({
+            path: decodedPath,
+            geodesic: true,
+            strokeColor: '#2563eb',
+            strokeOpacity: 0.8,
+            strokeWeight: 4,
+          });
+          routePath.setMap(map);
 
-      // Fit bounds to show entire route
-      const bounds = new window.google.maps.LatLngBounds();
-      decodedPath.forEach((point) => bounds.extend(point));
-      map.fitBounds(bounds);
-    } else {
-      // If no polyline, just fit bounds to markers
-      const bounds = new window.google.maps.LatLngBounds();
-      bounds.extend(pickupCoords);
-      bounds.extend(dropCoords);
-      map.fitBounds(bounds);
-    }
+          // Fit bounds to show entire route
+          const bounds = new window.google.maps.LatLngBounds();
+          decodedPath.forEach((point) => bounds.extend(point));
+          map.fitBounds(bounds);
+        } else {
+          // If no polyline, just fit bounds to markers
+          const bounds = new window.google.maps.LatLngBounds();
+          bounds.extend(pickupCoords);
+          bounds.extend(dropCoords);
+          map.fitBounds(bounds);
+        }
 
-    // Add info window with distance and duration
-    const infoContent = `
-      <div style="padding: 8px; font-family: Arial, sans-serif;">
-        <strong style="color: #2563eb; font-size: 16px;">Route Details</strong><br/>
-        <div style="margin-top: 8px;">
-          <strong>Distance:</strong> ${distance} km<br/>
-          <strong>Duration:</strong> ${duration}
-        </div>
-      </div>
-    `;
+        // Add info window with distance and duration
+        const infoContent = `
+          <div style="padding: 8px; font-family: Arial, sans-serif;">
+            <strong style="color: #2563eb; font-size: 16px;">Route Details</strong><br/>
+            <div style="margin-top: 8px;">
+              <strong>Distance:</strong> ${distance} km<br/>
+              <strong>Duration:</strong> ${duration}
+            </div>
+          </div>
+        `;
 
-    const infoWindow = new window.google.maps.InfoWindow({
-      content: infoContent,
-      position: pickupCoords,
-    });
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: infoContent,
+          position: pickupCoords,
+        });
 
-    // Show info window after a short delay
-    setTimeout(() => {
-      infoWindow.open(map);
-    }, 500);
+        // Show info window after a short delay
+        setTimeout(() => {
+          infoWindow.open(map);
+        }, 500);
+      } catch (error) {
+        console.error('Failed to load Google Maps:', error);
+        setMapError(true);
+        setIsLoading(false);
+      }
+    };
+
+    initMap();
 
     // Cleanup
     return () => {
@@ -99,13 +108,30 @@ const MapDisplay = ({ pickupCoords, dropCoords, routePolyline, distance, duratio
     };
   }, [pickupCoords, dropCoords, routePolyline, distance, duration]);
 
+  if (isLoading) {
+    return (
+      <div className="mt-6">
+        <h4 className="text-lg font-bold mb-3 text-gray-800">📍 Route Map</h4>
+        <div className="w-full h-96 rounded-lg border-2 border-gray-300 shadow-md flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-3"></div>
+            <p className="text-gray-600">Loading map...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (mapError) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-        <p className="text-red-600 font-semibold">⚠️ Map could not be loaded</p>
-        <p className="text-sm text-red-500 mt-2">
-          Please ensure Google Maps API is properly configured
-        </p>
+      <div className="mt-6">
+        <h4 className="text-lg font-bold mb-3 text-gray-800">📍 Route Map</h4>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+          <p className="text-red-600 font-semibold">⚠️ Map could not be loaded</p>
+          <p className="text-sm text-red-500 mt-2">
+            Please ensure Google Maps API is properly configured
+          </p>
+        </div>
       </div>
     );
   }

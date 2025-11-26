@@ -39,6 +39,9 @@ console.log("✅ /api/booking route registered");
 app.use("/api/paypal", require("./routes/paypal"));
 console.log("✅ /api/paypal route registered");
 
+app.use("/api/config", require("./routes/config"));
+console.log("✅ /api/config route registered");
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "Backend running fine ✅" });
